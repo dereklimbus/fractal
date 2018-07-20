@@ -1,1 +1,3 @@
-import vertexShader from './vertex.glsl'
+import Controller from './Controller'
+
+const controller = new Controller()
