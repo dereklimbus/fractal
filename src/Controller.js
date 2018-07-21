@@ -2,12 +2,17 @@ import Canvas from './Canvas'
 
 class Controller {
   canvas = new Canvas()
-  zoomFactor = 2
 
-  zoomIn(target = {
-    x: (this.canvas.range.x.min + this.canvas.range.x.max) / 2,
-    y: (this.canvas.range.y.min + this.canvas.range.y.max) / 2
-  }) {
+  constructor() {
+    window.addEventListener('resize', this.handleResize.bind(this))
+  }
+
+  handleResize() {
+    this.canvas.size = {x: window.innerWidth, y: window.innerHeight}
+    this.canvas.render()
+  }
+
+  zoomIn(target = this.canvas.center) {
     const len = {
       x: (this.canvas.range.x.max - this.canvas.range.x.min) / zoomFactor,
       y: (this.canvas.range.y.max - this.canvas.range.y.min) / zoomFactor
@@ -39,7 +44,7 @@ class Controller {
     }
   }
 
-  zoomOut() {
+  zoomOut(target = this.canvas.center) {
     const diff = {
       x: (this.canvas.range.x.max - this.canvas.range.x.min) * (zoomFactor - 1),
       y: (this.canvas.range.y.max - this.canvas.range.y.min) * (zoomFactor - 1)

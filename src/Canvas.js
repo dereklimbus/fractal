@@ -6,48 +6,25 @@ class Canvas {
   material = new THREE.ShaderMaterial({
     fragmentShader: fragmentShader,
     uniforms: {
-      size: new THREE.Uniform(),
-      range: new THREE.Uniform()
+      size: new THREE.Uniform(
+        new THREE.Vector2(window.innerWidth, window.innerHeight)
+      ),
+      center: new THREE.Uniform(
+        new THREE.Vector2((-2.5 + 1) / 2, (1 + -1) / 2)
+      ),
+      unit: new THREE.Uniform(
+        window.innerWidth / window.innerHeight > (1 - -2.5) / (1 - -1) ?
+        (1 - -1) / window.innerHeight :
+        (1 - -2.5) / window.innerWidth
+      )
     },
   })
   mesh = new THREE.Mesh(this.geometry, this.material)
   scene = new THREE.Scene()
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
-  renderer = new THREE.WebGLRenderer()
-
-  get size() {
-    return this.renderer.getSize()
-  }
-  set size({width = window.innerWidth, height = window.innerHeight}) {
-    this.material.uniforms.size.value = {width: width, height: height}
-    this.renderer.setSize(width, height)
-  }
-
-  get range() {
-    return this.material.uniforms.range.value
-  }
-  set range({x = {min: -2.5, max: 1}, y = {min: -1, max: 1}}) {
-    const fittedRange = (range, size) => {
-      range = JSON.parse(JSON.stringify(range))
-      const sizeAspectRatio = size.width / size.height
-      const rangeAspectRatio =
-        (range.x.max - range.x.min) /
-        (range.y.max - range.y.min)
-      if (sizeAspectRatio < rangeAspectRatio) {
-        const lenY = (range.x.max - range.x.min) / sizeAspectRatio
-        range.y.min = -(lenY / 2)
-        range.y.max = lenY / 2
-      } else {
-        const newLenX = (range.y.max - range.y.min) * sizeAspectRatio
-        const oldLenX = range.x.max - range.x.min
-        range.x.min -= (newLenX - oldLenX) / 2
-        range.x.max += (newLenX - oldLenX) / 2
-      }
-      return range
-    }
-
-    this.material.uniforms.range.value = fittedRange({x: x, y: y}, this.size)
-  }
+  renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementsByTagName('canvas')[0]
+  })
 
   constructor() {
     this.geometry.vertices.push(
@@ -60,11 +37,34 @@ class Canvas {
     this.geometry.faces.push(new THREE.Face3(2, 3, 0))
     this.scene.add(this.mesh)
     this.camera.position.set(0, 0, 0)
+    this.renderer.setSize(window.innerWidth, window.innerHeight)
 
-    this.size = {}
-    this.range = {}
+    this.render()
+  }
 
-    document.body.appendChild(this.renderer.domElement)
+  get size() {
+    return this.material.uniforms.size.value
+  }
+  set size(size) {
+    this.material.uniforms.size.value = size
+    this.renderer.setSize(size.x, size.y)
+  }
+
+  get unit() {
+    return this.materials.uniforms.unit.value
+  }
+  set unit(unit) {
+    this.materials.uniforms.unit.value = unit
+  }
+
+  get center() {
+    return this.materials.uniforms.center.value
+  }
+  set center(center) {
+    this.materials.uniforms.center.value = center
+  }
+
+  render() {
     this.renderer.render(this.scene, this.camera)
   }
 }

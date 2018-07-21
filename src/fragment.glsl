@@ -1,28 +1,20 @@
 precision highp float;
 
-struct Size {
-	int width;
-	int height;
-};
-struct Range {
-	float min;
-	float max;
-};
-struct Range2d {
-	Range x;
-	Range y;
-};
+uniform vec2 size;
+uniform vec2 center;
+uniform float unit;
 
-uniform Size size;
-uniform Range2d range;
-
-vec3 hsl2rgb(vec3 hsl);
-float hue2rgb(float f1, float f2, float hue);
+vec3 rgb(vec3 hsl);
+float channel(float factor1, float factor2, float value);
 
 void main() {
+	vec2 origin = vec2(
+		center.x - size.x / 2.0 * unit,
+		center.y - size.y / 2.0 * unit
+	);
 	vec2 c = vec2(
-		gl_FragCoord.x / float(size.width) * (range.x.max - range.x.min) + range.x.min,
-		gl_FragCoord.y / float(size.height) * (range.y.max - range.y.min) + range.y.min
+		origin.x + gl_FragCoord.x * unit,
+		origin.y + gl_FragCoord.y * unit
 	);
 	vec2 z = c;
 	int iteration = 0;
@@ -43,55 +35,55 @@ void main() {
 	if (iteration < maxIteration) {
 		float h = (1.0 - float(iteration) / float(maxIteration)) * 240.0 / 360.0;
 		vec3 hsl = vec3(h, 1.0, 0.5);
-		gl_FragColor = vec4(hsl2rgb(hsl), 1.0);
+		gl_FragColor = vec4(rgb(hsl), 1.0);
 	} else {
 		discard;
 	}
 }
 
-vec3 hsl2rgb(vec3 hsl) {
+vec3 rgb(vec3 hsl) {
     vec3 rgb;
     if (hsl.y == 0.0) {
       rgb = vec3(hsl.z);
     } else {
-      float f2;
+      float factor2;
 
       if (hsl.z < 0.5) {
-				f2 = hsl.z * (1.0 + hsl.y);
+				factor2 = hsl.z * (1.0 + hsl.y);
 			}
       else {
-				f2 = hsl.z + hsl.y - hsl.y * hsl.z;
+				factor2 = hsl.z + hsl.y - hsl.y * hsl.z;
 			}
 
-      float f1 = 2.0 * hsl.z - f2;
+      float factor1 = 2.0 * hsl.z - factor2;
 
-      rgb.r = hue2rgb(f1, f2, hsl.x + (1.0 / 3.0));
-      rgb.g = hue2rgb(f1, f2, hsl.x);
-      rgb.b = hue2rgb(f1, f2, hsl.x - (1.0 / 3.0));
+      rgb.r = channel(factor1, factor2, hsl.x + (1.0 / 3.0));
+      rgb.g = channel(factor1, factor2, hsl.x);
+      rgb.b = channel(factor1, factor2, hsl.x - (1.0 / 3.0));
     }
     return rgb;
 }
 
-float hue2rgb(float f1, float f2, float hue) {
-    if (hue < 0.0) {
-			hue += 1.0;
+float channel(float factor1, float factor2, float value) {
+    if (value < 0.0) {
+			value += 1.0;
 		}
-    else if (hue > 1.0) {
-			hue -= 1.0;
+    else if (value > 1.0) {
+			value -= 1.0;
 		}
 
-    float res;
-    if ((6.0 * hue) < 1.0) {
-			res = f1 + (f2 - f1) * 6.0 * hue;
+    float channel;
+    if ((6.0 * value) < 1.0) {
+			channel = factor1 + (factor2 - factor1) * 6.0 * value;
 		}
-    else if ((2.0 * hue) < 1.0) {
-			res = f2;
+    else if ((2.0 * value) < 1.0) {
+			channel = factor2;
 		}
-    else if ((3.0 * hue) < 2.0) {
-			res = f1 + (f2 - f1) * ((2.0 / 3.0) - hue) * 6.0;
+    else if ((3.0 * value) < 2.0) {
+			channel = factor1 + (factor2 - factor1) * ((2.0 / 3.0) - value) * 6.0;
 		}
     else {
-			res = f1;
+			channel = factor1;
 		}
-    return res;
+    return channel;
 }
