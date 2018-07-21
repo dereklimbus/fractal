@@ -16,24 +16,35 @@ void main() {
 		origin.x + gl_FragCoord.x * unit,
 		origin.y + gl_FragCoord.y * unit
 	);
+
+	float q = (c.x - 0.25) * (c.x - 0.25) + c.y * c.y;
+	if (q * (q + c.x - 0.25) < c.y * c.y * 0.25) {
+		discard;
+	}
+
 	vec2 z = c;
 	int iteration = 0;
-	const int maxIteration = 1000;
+	const int maxIteration = 100;
 
 	for (int i = 0; i < maxIteration; i++) {
-		float t = 2.0 * z.x * z.y + c.y;
-		z.x = z.x * z.x - z.y * z.y + c.x;
-		z.y = t;
-
-		if (z.x * z.x + z.y * z.y > 4.0) {
+		float tempX = z.x * z.x - z.y * z.y + c.x;
+		float tempY = 2.0 * z.x * z.y + c.y;
+		if (z.x == tempX && z.y == tempY) {
+			iteration = maxIteration;
 			break;
 		}
-
+		z.x = tempX;
+		z.y = tempY;
+		if (length(z) > 2.0) {
+			break;
+		}
 		iteration++;
 	}
 
 	if (iteration < maxIteration) {
-		float h = (1.0 - float(iteration) / float(maxIteration)) * 240.0 / 360.0;
+		float smoothIteration =
+			float(iteration + 1) - log(log(length(z))) / log(2.0);
+		float h = (1.0 - smoothIteration / float(maxIteration)) * 240.0 / 360.0;
 		vec3 hsl = vec3(h, 1.0, 0.5);
 		gl_FragColor = vec4(rgb(hsl), 1.0);
 	} else {
