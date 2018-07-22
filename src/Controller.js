@@ -1,77 +1,104 @@
 import Canvas from './Canvas'
+import Hammer from 'hammerjs'
 
 class Controller {
   canvas = new Canvas()
 
   constructor() {
+    const hammer = new Hammer(this.canvas.domElement)
+
     window.addEventListener('resize', this.handleResize.bind(this))
+
+    this.canvas.domElement.addEventListener(
+      'wheel',
+      this.handleWheel.bind(this)
+    )
+    hammer.on('doubletap', this.handleDoubleTap.bind(this))
+    hammer.get('pinch').set({enable: true})
+    hammer.on('pinch', this.handlePinch.bind(this))
+
+    document.addEventListener('keydown', this.handleKeyDown.bind(this))
+    hammer.get('pan').set({direction: Hammer.DIRECTION_ALL})
+    hammer.on('panmove', this.handlePanMove.bind(this))
   }
 
   handleResize() {
     this.canvas.size = {x: window.innerWidth, y: window.innerHeight}
-    this.canvas.render()
   }
 
-  zoomIn(target = this.canvas.center) {
-    const len = {
-      x: (this.canvas.range.x.max - this.canvas.range.x.min) / zoomFactor,
-      y: (this.canvas.range.y.max - this.canvas.range.y.min) / zoomFactor
+  handleWheel(e) {
+    const target = {
+      x: this.canvas.origin.x + e.x * this.canvas.unit,
+      y: this.canvas.origin.y - e.y * this.canvas.unit
     }
-
-    const boundedRange = (bounded, bounding) => {
-      const range = {...bounded}
-      if (range.min < bounding.min) {
-        const diff = bounding.min - range.min
-        range.min += diff
-        range.max += diff
-      } else if (range.max > bounding.max) {
-        const diff = range.max - bounding.max
-        range.max -= diff
-        range.min -= diff
-      }
-      return range
+    let scale = 1 + Math.abs(e.deltaY) / this.canvas.size.y
+    if (e.deltaY < 0) {
+      scale = 1 / scale
     }
+    this.zoom(target, scale)
+  }
 
-    this.canvas.range = {
-      x: boundedRange({
-        min: target.x - len.x / 2,
-        max: target.x + len.x / 2
-      }, this.canvas.range.x),
-      y: boundedRange({
-        min: target.y - len.y / 2,
-        max: target.y + len.y / 2
-      }, this.canvas.range.y)
+  handleDoubleTap(e) {
+    const target = {
+      x: this.canvas.origin.x + e.center.x * this.canvas.unit,
+      y: this.canvas.origin.y - e.center.y * this.canvas.unit
+    }
+    const scale = 0.5
+    this.zoom(target, scale)
+  }
+
+  handlePinch(e) {
+    const target = {
+      x: this.canvas.origin.x + e.center.x * this.canvas.unit,
+      y: this.canvas.origin.y - e.center.y * this.canvas.unit
+    }
+    let scale =
+      1 +
+      Math.sqrt(e.deltaX * e.deltaX + e.deltaY * e.deltaY) /
+      Math.sqrt(
+        Math.pow(this.canvas.size.x, 2) + Math.pow(this.canvas.size.y, 2)
+      )
+    if (e.scale > 1) {
+      scale = 1 / scale
+    }
+    this.zoom(target, scale)
+  }
+
+  handleKeyDown(e) {
+    switch (e.key) {
+      case 'ArrowUp':
+        this.move({x: 0, y: this.canvas.size.y / 8})
+        break
+      case 'ArrowRight':
+        this.move({x: -(this.canvas.size.x / 8), y: 0})
+        break
+      case 'ArrowDown':
+        this.move({x: 0, y: -(this.canvas.size.y / 8)})
+        break
+      case 'ArrowLeft':
+        this.move({x: this.canvas.size.x / 8, y: 0})
+        break
+      default:
+        break
     }
   }
 
-  zoomOut(target = this.canvas.center) {
-    const diff = {
-      x: (this.canvas.range.x.max - this.canvas.range.x.min) * (zoomFactor - 1),
-      y: (this.canvas.range.y.max - this.canvas.range.y.min) * (zoomFactor - 1)
-    }
-
-    this.canvas.range = {
-      x: {
-        min: this.canvas.range.x.min - diff.x / 2,
-        max: this.canvas.range.x.max + diff.x / 2
-      },
-      y: {
-        min: this.canvas.range.y.min - diff.y / 2,
-        max: this.canvas.range.y.max + diff.y / 2
-      }
-    }
+  handlePanMove(e) {
+    this.move({x: e.deltaX / 8, y: e.deltaY / 8})
   }
 
-  move(delta = {x: 0, y: 0}) {
-    this.canvas.range = {
-      x: {
-        min: this.canvas.range.x.min + x,
-        max: this.canvas.range.x.max + x
-      },
-      y: {
-        min: this.canvas.range.y.min + y,
-        max: this.canvas.range.y.max + y
-      }
+  zoom(target, scale) {
+    this.canvas.center = {
+      x: target.x - (target.x - this.canvas.center.x) * scale,
+      y: target.y - (target.y - this.canvas.center.y) * scale
+    }
+    this.canvas.unit *= scale
+  }
+
+  move(delta) {
+    this.canvas.center = {
+      x: this.canvas.center.x - delta.x * this.canvas.unit,
+      y: this.canvas.center.y + delta.y * this.canvas.unit
     }
   }
 }

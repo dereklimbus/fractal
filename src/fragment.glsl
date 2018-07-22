@@ -24,7 +24,7 @@ void main() {
 
 	vec2 z = c;
 	int iteration = 0;
-	const int maxIteration = 100;
+	const int maxIteration = 128;
 
 	for (int i = 0; i < maxIteration; i++) {
 		float tempX = z.x * z.x - z.y * z.y + c.x;

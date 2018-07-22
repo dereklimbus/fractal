@@ -43,29 +43,55 @@ class Canvas {
   }
 
   get size() {
-    return this.material.uniforms.size.value
+    return {
+      x: this.material.uniforms.size.value.x,
+      y: this.material.uniforms.size.value.y
+    }
   }
   set size(size) {
-    this.material.uniforms.size.value = size
+    this.material.uniforms.size.value.x = size.x
+    this.material.uniforms.size.value.y = size.y
     this.renderer.setSize(size.x, size.y)
   }
 
   get unit() {
-    return this.materials.uniforms.unit.value
+    return this.material.uniforms.unit.value
   }
   set unit(unit) {
-    this.materials.uniforms.unit.value = unit
+    this.material.uniforms.unit.value = unit
   }
 
   get center() {
-    return this.materials.uniforms.center.value
+    return {
+      x: this.material.uniforms.center.value.x,
+      y: this.material.uniforms.center.value.y
+    }
   }
   set center(center) {
-    this.materials.uniforms.center.value = center
+    this.material.uniforms.center.value.x = center.x
+    this.material.uniforms.center.value.y = center.y
+  }
+
+  get origin() {
+    return {
+      x: this.center.x - this.size.x / 2 * this.unit,
+      y: this.center.y + this.size.y / 2 * this.unit
+    }
+  }
+  set origin(origin) {
+    this.center = {
+      x: origin.x + this.size.x / 2 * this.unit,
+      y: origin.y + this.size.y / 2 * this.unit
+    }
+  }
+
+  get domElement() {
+    return this.renderer.domElement
   }
 
   render() {
     this.renderer.render(this.scene, this.camera)
+    requestAnimationFrame(this.render.bind(this))
   }
 }
 
